@@ -4,6 +4,7 @@ def APP_VERSION
 def DOCKER_IMAGE_NAME
 def PROD_BUILD = false
 def TAG_BUILD = false
+
 pipeline {
     agent {
         node {
@@ -32,6 +33,9 @@ pipeline {
         ARTIFACTS = "build/libs/**"
         DOCKER_REGISTRY = "moonjiuk"
         DOCKERHUB_CREDENTIAL = 'dockerhub-token'
+
+        // ✅ Docker가 설치된 경로 명시 (macOS용)
+        PATH = "/usr/local/bin:/opt/homebrew/bin:$PATH"
     }
 
     options {
@@ -43,7 +47,6 @@ pipeline {
     tools {
         gradle 'Gradle 8.14.2'
         jdk 'OpenJDK 17'
-        dockerTool 'Docker'
     }
 
     stages {
@@ -66,8 +69,8 @@ pipeline {
                     sh "echo DOCKER_IMAGE_NAME is ${DOCKER_IMAGE_NAME}"
 
                     sh "echo TAG is ${params.TAG}"
-                    if( params.TAG.startsWith('origin') == false && params.TAG.endsWith('/main') == false ) {
-                        if( params.RELEASE == true ) {
+                    if (params.TAG.startsWith('origin') == false && params.TAG.endsWith('/main') == false) {
+                        if (params.RELEASE == true) {
                             DOCKER_IMAGE_NAME += '-RELEASE'
                             PROD_BUILD = true
                         } else {
@@ -86,26 +89,19 @@ pipeline {
         }
 
         stage('Build Docker Image') {
-//             when {
-//                 expression { PROD_BUILD == true || TAG_BUILD == true }
-//             }
             steps {
                 script {
-                    docker.build "${DOCKER_IMAGE_NAME}"
+                    docker.build("${DOCKER_IMAGE_NAME}")
                 }
             }
         }
 
         stage('Push Docker Image') {
-//             when {
-//                 expression { PROD_BUILD == true || TAG_BUILD == true }
-//             }
             steps {
                 script {
                     docker.withRegistry("", DOCKERHUB_CREDENTIAL) {
                         docker.image("${DOCKER_IMAGE_NAME}").push()
                     }
-
                     sh "docker rmi ${DOCKER_IMAGE_NAME}"
                 }
             }
