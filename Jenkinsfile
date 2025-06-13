@@ -32,6 +32,7 @@ pipeline {
         ARTIFACTS = "build/libs/**"
         DOCKER_REGISTRY = "moonjiuk"
         DOCKERHUB_CREDENTIAL = 'dockerhub-token'
+        PATH = "/opt/homebrew/bin:/usr/local/bin:$PATH"   // ✅ Docker 경로 명시
     }
 
     options {
@@ -86,20 +87,14 @@ pipeline {
         }
 
         stage('Build Docker Image') {
-//             when {
-//                 expression { PROD_BUILD == true || TAG_BUILD == true }
-//             }
             steps {
                 script {
-                    docker.build "${DOCKER_IMAGE_NAME}"
+                    docker.build("${DOCKER_IMAGE_NAME}")
                 }
             }
         }
 
         stage('Push Docker Image') {
-//             when {
-//                 expression { PROD_BUILD == true || TAG_BUILD == true }
-//             }
             steps {
                 script {
                     docker.withRegistry("", DOCKERHUB_CREDENTIAL) {
